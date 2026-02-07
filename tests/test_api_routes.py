@@ -11,6 +11,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from main import app
 
 
+# Marker for tests that make real network calls
+pytestmark = pytest.mark.network
+
+
 class TestAPIEndpoints:
     """Test cases for API endpoints."""
     
@@ -62,6 +66,7 @@ class TestAPIEndpoints:
         response = client.get('/api/search?q=a')
         assert response.status_code == 400
     
+    @pytest.mark.network
     def test_search_endpoint_exists(self, client):
         """Test search endpoint exists and accepts query."""
         # Note: This will hit yt-dlp, may fail due to bot detection
@@ -96,6 +101,7 @@ class TestResolveRequestValidation:
         "http://www.youtube.com/watch?v=dQw4w9WgXcQ",
         "https://www.youtube.com/shorts/dQw4w9WgXcQ",
     ])
+    @pytest.mark.network
     def test_resolve_accepts_youtube_urls(self, client, url):
         """YouTube URLs should be accepted (may fail extraction)."""
         # URL validation passes, extraction may fail

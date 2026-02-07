@@ -4,75 +4,215 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NextSoundWave</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body>
+<body class="ytm-theme">
     <!-- Top Navigation Bar -->
-    <header id="top-bar">
-        <div class="hamburger">☰</div>
-        <div class="logo">NextSoundWave</div>
-        <div class="search-container">
-            <input type="text" id="search-input" placeholder="Search music, podcasts...">
+    <header id="top-bar" class="ytm-header">
+        <div class="header-left">
+            <button class="icon-btn" id="menu-btn">
+                <span class="material-icons">menu</span>
+            </button>
+            <a href="/" class="logo-link">
+                <span class="logo-icon material-icons">music_note</span>
+                <span class="logo-text">NextSoundWave</span>
+            </a>
         </div>
-        <div class="user-avatar">👤</div>
+        
+        <div class="search-container">
+            <div class="search-bar">
+                <span class="material-icons search-icon">search</span>
+                <input type="text" id="search-input" placeholder="Search songs, albums, artists">
+                <button class="icon-btn" id="voice-search-btn">
+                    <span class="material-icons">mic</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="header-right">
+            <button class="icon-btn" id="cast-btn">
+                <span class="material-icons">cast</span>
+            </button>
+            <button class="icon-btn" id="notifications-btn">
+                <span class="material-icons">notifications</span>
+            </button>
+            <div class="user-avatar">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%23f0f0f0'/%3E%3C/svg%3E" alt="User">
+            </div>
+        </div>
     </header>
     
     <div class="main-container">
         <!-- Left Sidebar -->
-        <nav id="sidebar">
-            <ul class="nav-list">
-                <li class="nav-item active">Home</li>
-                <li class="nav-item">Explore</li>
-                <li class="nav-item">Library</li>
-            </ul>
+        <nav id="sidebar" class="ytm-sidebar">
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Menu</h3>
+                <ul class="nav-list">
+                    <li class="nav-item active" data-page="home">
+                        <span class="material-icons">home</span>
+                        <span class="nav-text">Home</span>
+                    </li>
+                    <li class="nav-item" data-page="explore">
+                        <span class="material-icons">explore</span>
+                        <span class="nav-text">Explore</span>
+                    </li>
+                    <li class="nav-item" data-page="library">
+                        <span class="material-icons">library_music</span>
+                        <span class="nav-text">Library</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">My Library</h3>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <span class="material-icons">history</span>
+                        <span class="nav-text">Recently Played</span>
+                    </li>
+                    <li class="nav-item">
+                        <span class="material-icons">favorite</span>
+                        <span class="nav-text">Liked Songs</span>
+                    </li>
+                    <li class="nav-item">
+                        <span class="material-icons">album</span>
+                        <span class="nav-text">Albums</span>
+                    </li>
+                    <li class="nav-item">
+                        <span class="material-icons">person</span>
+                        <span class="nav-text">Artists</span>
+                    </li>
+                </ul>
+            </div>
         </nav>
         
         <!-- Main Content Area -->
-        <main id="main-content">
-            <div id="content-area">
-                <p class="placeholder-text">Search for music or podcasts to get started...</p>
+        <main id="main-content" class="ytm-main">
+            <div id="content-area" class="ytm-content">
+                <!-- Hero Section -->
+                <section class="hero-section" id="hero-section">
+                    <div class="hero-content">
+                        <h1 class="hero-title">Good evening</h1>
+                        <p class="hero-subtitle">Jump back into your music</p>
+                    </div>
+                </section>
+                
+                <!-- Quick Picks -->
+                <section class="content-section" id="quick-picks">
+                    <h2 class="section-title">Quick picks</h2>
+                    <div class="horizontal-scroll" id="quick-picks-list">
+                        <!-- Dynamically populated -->
+                    </div>
+                </section>
+                
+                <!-- Featured Playlists -->
+                <section class="content-section" id="featured-section">
+                    <h2 class="section-title">Featured playlists</h2>
+                    <div class="grid-scroll" id="featured-list">
+                        <!-- Dynamically populated -->
+                    </div>
+                </section>
+                
+                <!-- Search Results -->
+                <div id="search-results" class="search-results-container hidden">
+                    <h2 class="section-title">Top results</h2>
+                    <div class="search-results-grid" id="search-results-grid">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+                
+                <!-- Now Playing View -->
+                <div id="now-playing-view" class="now-playing-view hidden">
+                    <div class="now-playing-content">
+                        <div class="now-playing-artwork">
+                            <img id="np-artwork" src="" alt="Album art">
+                            <div class="now-playing-info">
+                                <h1 id="np-title"></h1>
+                                <h2 id="np-artist"></h2>
+                            </div>
+                        </div>
+                        <div class="now-playing-lyrics">
+                            <p>Lyrics coming soon...</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
         
-        <!-- Right Panel -->
-        <aside id="right-panel">
-            <div class="panel-header">Related</div>
-            <div id="related-videos">
-                <p class="placeholder-text">Related videos will appear here</p>
+        <!-- Right Panel - Queue -->
+        <aside id="right-panel" class="ytm-right-panel">
+            <div class="panel-header">
+                <h3>Queue</h3>
+                <button class="text-btn" id="save-playlist-btn">Save</button>
+            </div>
+            <div class="queue-list" id="queue-list">
+                <p class="placeholder-text">Queue is empty</p>
             </div>
         </aside>
     </div>
     
     <!-- Bottom Player Bar -->
-    <footer id="player-bar">
+    <footer id="player-bar" class="ytm-player-bar">
         <div class="player-track-info">
-            <img id="player-thumbnail" src="" alt="" class="hidden">
+            <img id="player-thumbnail" src="" alt="" class="hidden player-artwork">
             <div class="player-track-text">
-                <div id="player-track-title">-</div>
-                <div id="player-artist">-</div>
+                <a href="#" class="player-track-title" id="player-track-title">-</a>
+                <a href="#" class="player-artist" id="player-artist">-</a>
             </div>
+            <button class="icon-btn like-btn" id="like-btn">
+                <span class="material-icons">thumb_up_off_alt</span>
+            </button>
         </div>
         
-        <div class="player-controls">
-            <button id="btn-prev" class="control-btn">⏮</button>
-            <button id="btn-play" class="control-btn">▶</button>
-            <button id="btn-next" class="control-btn">⏭</button>
+        <div class="player-center">
+            <div class="player-controls">
+                <button class="icon-btn" id="btn-shuffle">
+                    <span class="material-icons">shuffle</span>
+                </button>
+                <button class="icon-btn" id="btn-prev">
+                    <span class="material-icons">skip_previous</span>
+                </button>
+                <button class="play-pause-btn" id="btn-play">
+                    <span class="material-icons">play_arrow</span>
+                </button>
+                <button class="icon-btn" id="btn-next">
+                    <span class="material-icons">skip_next</span>
+                </button>
+                <button class="icon-btn" id="btn-repeat">
+                    <span class="material-icons">repeat</span>
+                </button>
+            </div>
             <div class="progress-container">
                 <span id="current-time">0:00</span>
-                <input type="range" id="progress-bar" min="0" max="100" value="0">
+                <div class="progress-bar-wrapper">
+                    <input type="range" id="progress-bar" min="0" max="100" value="0" class="ytm-slider">
+                    <div class="progress-track">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
                 <span id="total-time">0:00</span>
             </div>
         </div>
         
         <div class="player-volume">
-            <span>🔊</span>
-            <input type="range" id="volume-slider" min="0" max="100" value="80">
+            <button class="icon-btn" id="btn-queue">
+                <span class="material-icons">queue_music</span>
+            </button>
+            <button class="icon-btn" id="btn-devices">
+                <span class="material-icons">devices</span>
+            </button>
+            <div class="volume-control">
+                <span class="material-icons" id="volume-icon">volume_up</span>
+                <input type="range" id="volume-slider" min="0" max="100" value="80" class="ytm-slider">
+            </div>
         </div>
     </footer>
     
     <!-- Hidden audio element -->
     <audio id="audio-player" preload="metadata"></audio>
     
-    <script src="/static/js/app.js"></script>
+    <script src="/js/app.js"></script>
 </body>
 </html>

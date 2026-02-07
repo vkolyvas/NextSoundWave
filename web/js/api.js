@@ -18,20 +18,14 @@ class APIClient {
             ...options
         };
         
-        try {
-            const response = await fetch(url, config);
-            
-            if (!response.ok) {
-                const error = await response.json().catch(() => ({}));
-                throw new Error(error.detail || `HTTP ${response.status}`);
-            }
-            
-            return await response.json();
-            
-        } catch (error) {
-            console.error('API request failed:', error);
-            throw error;
+        const response = await fetch(url, config);
+        
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || `HTTP ${response.status}`);
         }
+        
+        return await response.json();
     }
     
     async resolve(url) {

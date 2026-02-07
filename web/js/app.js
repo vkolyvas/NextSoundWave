@@ -1,5 +1,5 @@
 /**
- * NextSoundWave - Main Application Orchestrator
+ * NextSoundWave - YouTube Music Inspired Application
  */
 
 class NextSoundWaveApp {
@@ -8,6 +8,9 @@ class NextSoundWaveApp {
         this.player = new AudioPlayer();
         this.currentTrack = null;
         this.relatedVideos = [];
+        this.queue = [];
+        this.currentIndex = 0;
+        this.isPlaying = false;
         
         this.init();
     }
@@ -15,6 +18,7 @@ class NextSoundWaveApp {
     init() {
         this.setupEventListeners();
         this.setupPlayerListeners();
+        this.renderHomeView();
     }
     
     setupEventListeners() {
@@ -29,9 +33,17 @@ class NextSoundWaveApp {
             }
         });
         
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const page = e.currentTarget.dataset.page;
+                this.navigateTo(page);
+            });
+        });
+        
         // Player controls
         document.getElementById('btn-play').addEventListener('click', () => {
-            this.player.togglePlay();
+            this.togglePlay();
         });
         
         document.getElementById('btn-prev').addEventListener('click', () => {
@@ -40,6 +52,14 @@ class NextSoundWaveApp {
         
         document.getElementById('btn-next').addEventListener('click', () => {
             this.playNext();
+        });
+        
+        document.getElementById('btn-shuffle').addEventListener('click', () => {
+            this.toggleShuffle();
+        });
+        
+        document.getElementById('btn-repeat').addEventListener('click', () => {
+            this.toggleRepeat();
         });
         
         // Progress bar
@@ -53,11 +73,24 @@ class NextSoundWaveApp {
         const volumeSlider = document.getElementById('volume-slider');
         volumeSlider.addEventListener('input', (e) => {
             this.player.setVolume(e.target.value / 100);
+            this.updateVolumeIcon(e.target.value);
+        });
+        
+        // Like button
+        document.getElementById('like-btn').addEventListener('click', () => {
+            this.toggleLike();
+        });
+        
+        // Queue toggle
+        document.getElementById('btn-queue').addEventListener('click', () => {
+            this.toggleQueue();
         });
     }
     
     setupPlayerListeners() {
         const audio = this.player.audio;
+        
+        if (!audio) return;
         
         audio.addEventListener('loadedmetadata', () => {
             this.updateTimeDisplay();
@@ -66,169 +99,410 @@ class NextSoundWaveApp {
         audio.addEventListener('timeupdate', () => {
             this.updateTimeDisplay();
             this.updateProgress();
-            this.checkGaplessPlayback();
         });
         
         audio.addEventListener('ended', () => {
-            this.playNext();
+            this.onTrackEnded();
         });
         
         audio.addEventListener('error', (e) => {
             console.error('Playback error:', e);
-            this.showError('Failed to play track');
         });
     }
     
-    async search(query) {
-        const contentArea = document.getElementById('content-area');
-        contentArea.innerHTML = '<p>Searching...</p>';
+    navigateTo(page) {
+        // Update active nav
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.toggle('active', item.dataset.page === page);
+        });
         
-        try {
-            const results = await this.api.search(query);
-            this.renderSearchResults(results);
-        } catch (error) {
-            contentArea.innerHTML = `<p class="error">Search failed: ${error.message}</p>`;
+        // Hide search results, show appropriate view
+        document.getElementById('search-results').classList.add('hidden');
+        document.getElementById('hero-section').classList.remove('hidden');
+        document.getElementById('featured-section').classList.remove('hidden');
+        
+        switch(page) {
+            case 'home':
+                this.renderHomeView();
+                break;
+            case 'explore':
+                this.renderExploreView();
+                break;
+            case 'library':
+                this.renderLibraryView();
+                break;
         }
     }
     
-    renderSearchResults(results) {
-        const contentArea = document.getElementById('content-area');
+    renderHomeView() {
+        const quickPicks = document.getElementById('quick-picks-list');
+        const featured = document.getElementById('featured-list');
         
-        if (!results || results.length === 0) {
-            contentArea.innerHTML = '<p>No results found</p>';
-            return;
-        }
-        
-        const html = `
-            <h2>Search Results for "${results.query}"</h2>
-            <div class="search-results">
-                ${results.results.map(item => `
-                    <div class="result-card" data-id="${item.id}">
-                        <img class="result-thumbnail" src="${item.thumbnail || ''}" alt="">
-                        <div class="result-info">
-                            <div class="result-title">${this.escapeHtml(item.title)}</div>
-                            <div class="result-duration">${this.formatDuration(item.duration)}</div>
-                        </div>
-                    </div>
-                `).join('')}
+        quickPicks.innerHTML = `
+            <div class="music-card" data-id="demo1">
+                <div class="card-artwork">
+                    <img src="https://picsum.photos/200" alt="Lofi Dreams">
+                    <div class="card-play-btn"><span class="material-icons">play_arrow</span></div>
+                </div>
+                <div class="card-info">
+                    <div class="card-title">Lofi Dreams</div>
+                    <div class="card-subtitle">Chill Vibes</div>
+                </div>
+            </div>
+            <div class="music-card" data-id="demo2">
+                <div class="card-artwork">
+                    <img src="https://picsum.photos/201" alt="Night Drive">
+                    <div class="card-play-btn"><span class="material-icons">play_arrow</span></div>
+                </div>
+                <div class="card-info">
+                    <div class="card-title">Night Drive</div>
+                    <div class="card-subtitle">Synthwave Mix</div>
+                </div>
+            </div>
+            <div class="music-card" data-id="demo3">
+                <div class="card-artwork">
+                    <img src="https://picsum.photos/202" alt="Focus Mode">
+                    <div class="card-play-btn"><span class="material-icons">play_arrow</span></div>
+                </div>
+                <div class="card-info">
+                    <div class="card-title">Focus Mode</div>
+                    <div class="card-subtitle">Ambient Study</div>
+                </div>
+            </div>
+            <div class="music-card" data-id="demo4">
+                <div class="card-artwork">
+                    <img src="https://picsum.photos/203" alt="Workout Energy">
+                    <div class="card-play-btn"><span class="material-icons">play_arrow</span></div>
+                </div>
+                <div class="card-info">
+                    <div class="card-title">Workout Energy</div>
+                    <div class="card-subtitle">High Tempo</div>
+                </div>
+            </div>
+            <div class="music-card" data-id="demo5">
+                <div class="card-artwork">
+                    <img src="https://picsum.photos/204" alt="Morning Coffee">
+                    <div class="card-play-btn"><span class="material-icons">play_arrow</span></div>
+                </div>
+                <div class="card-info">
+                    <div class="card-title">Morning Coffee</div>
+                    <div class="card-subtitle">Acoustic Chill</div>
+                </div>
             </div>
         `;
         
-        contentArea.innerHTML = html;
+        featured.innerHTML = `
+            <div class="music-card" data-id="demo6">
+                <div class="card-artwork">
+                    <img src="https://picsum.photos/205" alt="Top 50">
+                    <div class="card-play-btn"><span class="material-icons">play_arrow</span></div>
+                </div>
+                <div class="card-info">
+                    <div class="card-title">Top 50: Global</div>
+                    <div class="card-subtitle">YouTube Music</div>
+                </div>
+            </div>
+            <div class="music-card" data-id="demo7">
+                <div class="card-artwork">
+                    <img src="https://picsum.photos/206" alt="New Releases">
+                    <div class="card-play-btn"><span class="material-icons">play_arrow</span></div>
+                </div>
+                <div class="card-info">
+                    <div class="card-title">New Releases</div>
+                    <div class="card-subtitle">This Week</div>
+                </div>
+            </div>
+            <div class="music-card" data-id="demo8">
+                <div class="card-artwork">
+                    <img src="https://picsum.photos/207" alt="Viral Hits">
+                    <div class="card-play-btn"><span class="material-icons">play_arrow</span></div>
+                </div>
+                <div class="card-info">
+                    <div class="card-title">Viral Hits</div>
+                    <div class="card-subtitle">Trending Now</div>
+                </div>
+            </div>
+            <div class="music-card" data-id="demo9">
+                <div class="card-artwork">
+                    <img src="https://picsum.photos/208" alt="Indie Gems">
+                    <div class="card-play-btn"><span class="material-icons">play_arrow</span></div>
+                </div>
+                <div class="card-info">
+                    <div class="card-title">Indie Gems</div>
+                    <div class="card-subtitle">Discover Weekly</div>
+                </div>
+            </div>
+            <div class="music-card" data-id="demo10">
+                <div class="card-artwork">
+                    <img src="https://picsum.photos/209" alt="Classic Rock">
+                    <div class="card-play-btn"><span class="material-icons">play_arrow</span></div>
+                </div>
+                <div class="card-info">
+                    <div class="card-title">Classic Rock</div>
+                    <div class="card-subtitle">Legends</div>
+                </div>
+            </div>
+            <div class="music-card" data-id="demo11">
+                <div class="card-artwork">
+                    <img src="https://picsum.photos/210" alt="Jazz Classics">
+                    <div class="card-play-btn"><span class="material-icons">play_arrow</span></div>
+                </div>
+                <div class="card-info">
+                    <div class="card-title">Jazz Classics</div>
+                    <div class="card-subtitle">Essential</div>
+                </div>
+            </div>
+        `;
         
-        // Add click handlers
-        contentArea.querySelectorAll('.result-card').forEach(card => {
-            card.addEventListener('click', async () => {
-                const videoId = card.dataset.id;
-                await this.playVideo(videoId);
+        this.attachCardListeners();
+    }
+    
+    renderExploreView() {
+        const contentArea = document.getElementById('content-area');
+        contentArea.innerHTML = `
+            <section class="hero-section">
+                <div class="hero-content">
+                    <h1 class="hero-title">Explore</h1>
+                    <p class="hero-subtitle">Discover new music</p>
+                </div>
+            </section>
+            <section class="content-section">
+                <h2 class="section-title">Genres</h2>
+                <div class="grid-scroll" id="genres-grid">
+                    <div class="genre-card" data-genre="Pop"><div class="genre-artwork"><img src="https://picsum.photos/230"></div><div class="genre-name">Pop</div></div>
+                    <div class="genre-card" data-genre="Rock"><div class="genre-artwork"><img src="https://picsum.photos/231"></div><div class="genre-name">Rock</div></div>
+                    <div class="genre-card" data-genre="Hip Hop"><div class="genre-artwork"><img src="https://picsum.photos/232"></div><div class="genre-name">Hip Hop</div></div>
+                    <div class="genre-card" data-genre="Electronic"><div class="genre-artwork"><img src="https://picsum.photos/233"></div><div class="genre-name">Electronic</div></div>
+                    <div class="genre-card" data-genre="Jazz"><div class="genre-artwork"><img src="https://picsum.photos/234"></div><div class="genre-name">Jazz</div></div>
+                    <div class="genre-card" data-genre="Classical"><div class="genre-artwork"><img src="https://picsum.photos/235"></div><div class="genre-name">Classical</div></div>
+                </div>
+            </section>
+        `;
+        
+        document.querySelectorAll('.genre-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const genre = card.dataset.genre;
+                this.search(genre);
             });
         });
     }
     
-    async playVideo(videoId) {
+    renderLibraryView() {
+        const contentArea = document.getElementById('content-area');
+        contentArea.innerHTML = `
+            <section class="hero-section">
+                <div class="hero-content">
+                    <h1 class="hero-title">Library</h1>
+                    <p class="hero-subtitle">Your music collection</p>
+                </div>
+            </section>
+            <section class="content-section">
+                <h2 class="section-title">Recently played</h2>
+                <div class="horizontal-scroll" id="recently-played">
+                    <div class="music-card horizontal-card" data-id="recent1"><div class="card-artwork"><img src="https://picsum.photos/240"><div class="card-play-btn"><span class="material-icons">play_arrow</span></div></div><div class="card-info"><div class="card-title">Favorites</div><div class="card-subtitle">Your top songs</div></div></div>
+                    <div class="music-card horizontal-card" data-id="recent2"><div class="card-artwork"><img src="https://picsum.photos/241"><div class="card-play-btn"><span class="material-icons">play_arrow</span></div></div><div class="card-info"><div class="card-title">Mix 1</div><div class="card-subtitle">Recommended</div></div></div>
+                    <div class="music-card horizontal-card" data-id="recent3"><div class="card-artwork"><img src="https://picsum.photos/242"><div class="card-play-btn"><span class="material-icons">play_arrow</span></div></div><div class="card-info"><div class="card-title">Mix 2</div><div class="card-subtitle">Discover Weekly</div></div></div>
+                    <div class="music-card horizontal-card" data-id="recent4"><div class="card-artwork"><img src="https://picsum.photos/243"><div class="card-play-btn"><span class="material-icons">play_arrow</span></div></div><div class="card-info"><div class="card-title">Mix 3</div><div class="card-subtitle">Daily Mix</div></div></div>
+                    <div class="music-card horizontal-card" data-id="recent5"><div class="card-artwork"><img src="https://picsum.photos/244"><div class="card-play-btn"><span class="material-icons">play_arrow</span></div></div><div class="card-info"><div class="card-title">History</div><div class="card-subtitle">Recently played</div></div></div>
+                </div>
+            </section>
+            <section class="content-section">
+                <h2 class="section-title">Your playlists</h2>
+                <div class="grid-scroll" id="playlists-grid">
+                    <div class="music-card create-playlist-card" id="create-playlist">
+                        <div class="card-artwork create-artwork"><span class="material-icons">add</span></div>
+                        <div class="card-info"><div class="card-title">Create playlist</div><div class="card-subtitle">New playlist</div></div>
+                    </div>
+                </div>
+            </section>
+        `;
+        
+        document.getElementById('create-playlist').addEventListener('click', () => {
+            this.createPlaylist();
+        });
+        
+        this.attachCardListeners();
+    }
+    
+    attachCardListeners() {
+        document.querySelectorAll('.music-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const id = card.dataset.id;
+                this.playCard(id);
+            });
+        });
+    }
+    
+    async playCard(id) {
+        // For demo, create a track
+        const track = {
+            id: id,
+            title: 'Demo Track ' + id,
+            artist: 'Demo Artist',
+            duration: 180,
+            thumbnail: 'https://picsum.photos/200'
+        };
+        await this.playTrack(track);
+    }
+    
+    async playTrack(track) {
+        this.currentTrack = track;
+        this.updatePlayerUI(track);
+        this.addToQueue(track);
+        this.isPlaying = true;
+        this.updatePlayPauseButton();
+    }
+    
+    async search(query) {
+        // Hide home views, show search
+        document.getElementById('hero-section').classList.add('hidden');
+        document.getElementById('featured-section').classList.add('hidden');
+        document.getElementById('search-results').classList.remove('hidden');
+        
         try {
-            // Resolve the video
-            const track = await this.api.resolve(`https://www.youtube.com/watch?v=${videoId}`);
-            
-            // Update player UI
-            this.updatePlayerUI(track);
-            
-            // Playback priority: YouTube Embed (AdBlock) → Direct Audio → Invidious (last resort)
-            const contentArea = document.getElementById('content-area');
-            
-            if (track.embed_url) {
-                // PRIMARY: YouTube embed with AdBlock
-                this.player.playYouTubeEmbed(track.embed_url, contentArea);
-            } else if (track.audio_url) {
-                // FALLBACK: Direct audio stream
-                this.player.play(track.audio_url);
-            } else if (track.invidious_url) {
-                // LAST RESORT: Invidious embed (ad-free by design)
-                this.player.playInvidiousEmbed(track.invidious_url, contentArea);
-            } else {
-                throw new Error('No playable URL available');
-            }
-            
-            // Store related videos
-            this.relatedVideos = track.related || [];
-            this.renderRelatedVideos();
-            
+            const results = await this.api.search(query);
+            this.renderSearchResults(results, query);
         } catch (error) {
-            this.showError(`Failed to play: ${error.message}`);
+            console.error('Search failed:', error);
+            document.getElementById('search-results-grid').innerHTML = `
+                <div class="search-no-results">
+                    <p>Search failed. Please try again.</p>
+                </div>
+            `;
         }
     }
     
-    updatePlayerUI(track) {
-        document.getElementById('player-track-title').textContent = track.title;
-        document.getElementById('player-artist').textContent = 'YouTube';
+    renderSearchResults(results, query) {
+        const grid = document.getElementById('search-results-grid');
         
-        const thumbnail = document.getElementById('player-thumbnail');
-        thumbnail.src = `https://img.youtube.com/vi/${track.id}/56.jpg`;
-        thumbnail.classList.remove('hidden');
-        
-        document.getElementById('btn-play').textContent = '⏸';
-    }
-    
-    renderRelatedVideos() {
-        const container = document.getElementById('related-videos');
-        
-        if (!this.relatedVideos.length) {
-            container.innerHTML = '<p class="placeholder-text">No related videos</p>';
+        if (!results || !results.results || results.results.length === 0) {
+            grid.innerHTML = `<div class="search-no-results"><p>No results found for "${this.escapeHtml(query)}"</p></div>`;
             return;
         }
         
-        container.innerHTML = this.relatedVideos.map(video => `
-            <div class="related-video-item" data-id="${video.id}">
-                <div class="related-info">
-                    <div class="related-title">${this.escapeHtml(video.title)}</div>
-                    <div class="related-duration">${this.formatDuration(video.duration)}</div>
+        grid.innerHTML = results.results.map(item => `
+            <div class="search-result-card" data-id="${item.id}" data-title="${this.escapeHtml(item.title)}">
+                <div class="search-result-thumb">
+                    <img src="https://img.youtube.com/vi/${item.id}/120.jpg" alt="${this.escapeHtml(item.title)}" onerror="this.src='https://picsum.photos/80'">
+                </div>
+                <div class="search-result-info">
+                    <div class="search-result-title">${this.escapeHtml(item.title)}</div>
+                    <div class="search-result-subtitle">Song</div>
+                    <div class="search-result-meta">${this.formatDuration(item.duration)}</div>
                 </div>
             </div>
         `).join('');
         
-        // Add click handlers
-        container.querySelectorAll('.related-video-item').forEach(item => {
-            item.addEventListener('click', async () => {
-                const videoId = item.dataset.id;
-                await this.playVideo(videoId);
+        grid.querySelectorAll('.search-result-card').forEach(card => {
+            card.addEventListener('click', async () => {
+                const id = card.dataset.id;
+                const title = card.dataset.title;
+                const result = results.results.find(r => r.id === id);
+                await this.playTrack({
+                    id: id,
+                    title: title || result.title,
+                    artist: 'Unknown Artist',
+                    duration: result.duration,
+                    thumbnail: `https://img.youtube.com/vi/${id}/120.jpg`
+                });
             });
         });
     }
     
+    addToQueue(track) {
+        const exists = this.queue.find(t => t.id === track.id);
+        if (!exists) {
+            this.queue.push(track);
+            this.renderQueue();
+        }
+    }
+    
+    renderQueue() {
+        const queueList = document.getElementById('queue-list');
+        
+        if (this.queue.length === 0) {
+            queueList.innerHTML = '<p class="placeholder-text">Queue is empty</p>';
+            return;
+        }
+        
+        queueList.innerHTML = this.queue.map((track, index) => `
+            <div class="queue-item ${index === this.currentIndex ? 'active' : ''}" data-index="${index}">
+                <div class="queue-thumb"><img src="${track.thumbnail || 'https://picsum.photos/48'}" alt="${this.escapeHtml(track.title)}"></div>
+                <div class="queue-info">
+                    <div class="queue-title">${this.escapeHtml(track.title)}</div>
+                    <div class="queue-artist">${this.escapeHtml(track.artist || 'Unknown')}</div>
+                </div>
+            </div>
+        `).join('');
+        
+        queueList.querySelectorAll('.queue-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const index = parseInt(item.dataset.index);
+                this.currentIndex = index;
+                this.playTrack(this.queue[index]);
+            });
+        });
+    }
+    
+    togglePlay() {
+        this.isPlaying = !this.isPlaying;
+        this.updatePlayPauseButton();
+    }
+    
     playPrevious() {
-        // For MVP: restart current track
-        this.player.restart();
+        if (this.currentIndex > 0) {
+            this.currentIndex--;
+            this.playTrack(this.queue[this.currentIndex]);
+        } else {
+            this.player.restart();
+        }
     }
     
     playNext() {
-        if (this.relatedVideos.length > 0) {
-            // Play the first related video
-            const nextVideo = this.relatedVideos[0];
-            this.playVideo(nextVideo.id);
+        if (this.queue.length > 0 && this.currentIndex < this.queue.length - 1) {
+            this.currentIndex++;
+            this.playTrack(this.queue[this.currentIndex]);
         }
     }
     
-    checkGaplessPlayback() {
-        // Gapless pre-fetch logic (T-15s)
-        const remaining = this.player.duration - this.player.currentTime;
+    onTrackEnded() {
+        this.playNext();
+    }
+    
+    toggleShuffle() {
+        document.getElementById('btn-shuffle').classList.toggle('active');
+    }
+    
+    toggleRepeat() {
+        const btn = document.getElementById('btn-repeat');
+        const icon = btn.querySelector('.material-icons');
+        btn.classList.toggle('active');
+        icon.textContent = btn.classList.contains('active') ? 'repeat_one' : 'repeat';
+    }
+    
+    toggleLike() {
+        const btn = document.getElementById('like-btn');
+        const icon = btn.querySelector('.material-icons');
+        icon.textContent = icon.textContent === 'thumb_up' ? 'thumb_up_off_alt' : 'thumb_up';
+        icon.style.color = icon.textContent === 'thumb_up' ? 'var(--ytm-brand-red)' : '';
+    }
+    
+    toggleQueue() {
+        document.getElementById('right-panel').classList.toggle('hidden');
+    }
+    
+    updatePlayerUI(track) {
+        document.getElementById('player-track-title').textContent = track.title;
+        document.getElementById('player-artist').textContent = track.artist || 'Unknown Artist';
         
-        if (remaining <= 15 && this.relatedVideos.length > 0) {
-            const nextVideo = this.relatedVideos[0];
-            // Pre-fetch next track URL in background
-            this.api.resolve(`https://www.youtube.com/watch?v=${nextVideo.id}`)
-                .then(track => {
-                    this.player.preload(track.audio_url);
-                })
-                .catch(() => {
-                    // Ignore pre-fetch errors
-                });
-        }
+        const thumbnail = document.getElementById('player-thumbnail');
+        thumbnail.src = track.thumbnail;
+        thumbnail.classList.remove('hidden');
     }
     
     updateTimeDisplay() {
         const current = this.player.currentTime;
         const duration = this.player.duration || 0;
-        
         document.getElementById('current-time').textContent = this.formatDuration(current);
         document.getElementById('total-time').textContent = this.formatDuration(duration);
     }
@@ -236,11 +510,21 @@ class NextSoundWaveApp {
     updateProgress() {
         const progress = (this.player.currentTime / this.player.duration) * 100;
         document.getElementById('progress-bar').value = progress || 0;
+        const fill = document.getElementById('progress-fill');
+        if (fill) fill.style.width = `${progress || 0}%`;
     }
     
-    showError(message) {
-        const contentArea = document.getElementById('content-area');
-        contentArea.innerHTML = `<p class="error">${this.escapeHtml(message)}</p>`;
+    updatePlayPauseButton() {
+        const btn = document.getElementById('btn-play');
+        const icon = btn.querySelector('.material-icons');
+        icon.textContent = this.isPlaying ? 'pause' : 'play_arrow';
+    }
+    
+    updateVolumeIcon(volume) {
+        const icon = document.getElementById('volume-icon');
+        if (volume == 0) icon.textContent = 'volume_off';
+        else if (volume < 50) icon.textContent = 'volume_down';
+        else icon.textContent = 'volume_up';
     }
     
     formatDuration(seconds) {
@@ -251,9 +535,17 @@ class NextSoundWaveApp {
     }
     
     escapeHtml(text) {
+        if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+    
+    createPlaylist() {
+        const name = prompt('Enter playlist name:');
+        if (name) {
+            alert(`Playlist "${name}" created!`);
+        }
     }
 }
 
