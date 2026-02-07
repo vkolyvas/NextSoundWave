@@ -1,14 +1,15 @@
 # NextSoundWave Docker Compose Configuration
-# Phase 6: Docker Deployment
+# Two containers: Backend (8000) + Frontend (3000)
 
 version: '3.8'
 
 services:
-  nextsoundwave:
+  # Backend API Service (Port 8000)
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: nextsoundwave
+    container_name: nextsoundwave-backend
     restart: unless-stopped
     ports:
       - "8000:8000"
@@ -16,9 +17,7 @@ services:
       - PYTHONUNBUFFERED=1
       - DEBUG=false
     volumes:
-      # Mount static files for development
       - ./web:/app/web
-      # Mount tests for CI
       - ./tests:/app/tests
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
@@ -27,8 +26,26 @@ services:
       retries: 3
       start_period: 10s
     networks:
-      - music-network
+      - nextsoundwave-network
+
+  # Frontend Static Server (Port 3000 → nginx:80)
+  frontend:
+    image: nginx:alpine
+    container_name: nextsoundwave-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - nextsoundwave-network
 
 networks:
-  music-network:
+  nextsoundwave-network:
     driver: bridge

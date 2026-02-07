@@ -8,61 +8,62 @@ Self-hosted music/podcast streaming via YouTube with ad-free embeds.
 - ▶️ **Playback** - YouTube Embed (with AdBlock) or direct audio
 - 🔗 **Related Videos** - Auto-load related content
 - 📱 **Responsive UI** - Works on desktop and mobile
-- 🚀 **Docker Ready** - Easy deployment
+- 🚀 **Docker Ready** - Easy deployment with 2 containers
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    SERVER (yt-dlp)                              │
-│  • Search YouTube                                             │
-│  • Extract metadata + stream URL                               │
-│  • Extract related videos                                     │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      CLIENT (Browser)                          │
-│  Playback Priority:                                           │
-│  1. YouTube Embed + AdBlock (PRIMARY)                      │
-│  2. Direct Audio Stream (fallback)                           │
-│  3. Invidious Embed (last resort)                            │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                        Docker Network                             │
+│                                                                  │
+│   ┌─────────────────┐              ┌─────────────────┐         │
+│   │   Frontend      │   /api/     │    Backend       │         │
+│   │   (nginx:80)    │────────────▶│   (FastAPI)     │         │
+│   │                  │   ◀─────────│   (:8000)       │         │
+│   └────────┬────────┘              └────────┬────────┘         │
+│            │                               │                   │
+│            ▼                               │                   │
+│      Port 3000 (Host)                     │                   │
+│      http://localhost:3000               │                   │
+│                                          │                   │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ## Quick Start
 
-### Option 1: Docker (Recommended)
+### Docker (Recommended)
 
 ```bash
-# Start the service
+# Start both containers (Frontend + Backend)
 docker-compose up -d
 
 # View logs
-docker-compose logs -f nextsoundwave
+docker-compose logs -f
 
 # Stop
 docker-compose down
 ```
 
-### Option 2: Local Development
+### Local Development
 
 ```bash
-# Install dependencies
+# Backend only
 pip install -r requirements.txt
-
-# Run development server
 python main.py
 
-# Or with uvicorn directly
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+# Access
+# Frontend: http://localhost:3000 (via nginx)
+# Backend:  http://localhost:8000
 ```
 
-## Access
+## Access Points
 
-- **Web UI:** http://localhost:8000
-- **API Docs:** http://localhost:8000/docs
-- **Health Check:** http://localhost:8000/api/health
+| Service | Container | Port | URL | Description |
+|---------|-----------|------|-----|-------------|
+| Frontend | nginx | 3000 | http://localhost:3000 | Web UI |
+| Backend | FastAPI | 8000 | http://localhost:8000 | API Server |
+| API Docs | FastAPI | 8000 | http://localhost:8000/docs | Swagger UI |
+| Health | FastAPI | 8000 | http://localhost:8000/api/health | Health Check |
 
 ## API Endpoints
 
@@ -77,61 +78,47 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 ```
 NextSoundWave/
-├── Dockerfile              # Docker configuration
-├── docker-compose.yml     # Docker Compose configuration
+├── Dockerfile              # Backend Docker config
+├── docker-compose.yml     # Two-container orchestration
+├── nginx/
+│   └── default.conf      # Frontend nginx config
 ├── requirements.txt       # Python dependencies
-├── main.py                # FastAPI entry point
-├── config.py              # Configuration management
-├── pytest.ini             # Pytest configuration
-├── ports.md               # Port allocation
-│
-├── yt_dlp_client.py       # yt-dlp wrapper
-├── extraction_backends.py  # Extraction backend manager
+├── main.py               # FastAPI entry point
+├── config.py             # Configuration
+├── extraction_backends.py # yt-dlp wrapper
 │
 ├── api/
-│   ├── routes.py          # API endpoints
-│   ├── errors.py          # Error handlers
-│   └── models.py          # Pydantic models
+│   ├── routes.py         # API endpoints
+│   ├── models.py         # Pydantic models
+│   └── errors.py         # Error handlers
 │
 ├── web/
-│   ├── index.html         # Main HTML template
-│   ├── css/styles.css     # UI styling
+│   ├── index.html        # Main UI
+│   ├── css/styles.css    # Styling
 │   └── js/
-│       ├── api.js         # API client
-│       ├── player.js      # Audio player wrapper
-│       └── app.js         # Main orchestrator
+│       ├── api.js       # API client
+│       ├── player.js    # Audio player
+│       └── app.js       # Orchestrator
 │
-└── tests/                 # Test suite (155 tests)
+└── tests/               # 186 tests
 ```
 
 ## Running Tests
 
 ```bash
-# Run all tests
+# All tests
 pytest tests/ -v
 
-# Run specific test file
+# Specific phase
 pytest tests/test_phase*.py -v
-
-# Run with coverage
-pytest --cov=. tests/
 ```
 
 ## Configuration
 
 Environment variables:
-- `SERVER_HOST` - Server host (default: 0.0.0.0)
-- `SERVER_PORT` - Server port (default: 8000)
+- `SERVER_HOST` - Backend host (default: 0.0.0.0)
+- `SERVER_PORT` - Backend port (default: 8000)
 - `DEBUG` - Debug mode (default: false)
-- `YTDLP_TIMEOUT` - yt-dlp timeout (default: 30s)
-
-## Port Allocation
-
-| Service | Port | Status |
-|---------|------|--------|
-| NextSoundWave API | 8000 | ✅ Allocated |
-
-See [ports.md](ports.md) for details.
 
 ## License
 
