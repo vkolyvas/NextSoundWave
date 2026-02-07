@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NextSoundWave</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header id="top-bar">
+        <div class="hamburger">☰</div>
+        <div class="logo">NextSoundWave</div>
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search music, podcasts...">
+        </div>
+        <div class="user-avatar">👤</div>
+    </header>
+    
+    <div class="main-container">
+        <!-- Left Sidebar -->
+        <nav id="sidebar">
+            <ul class="nav-list">
+                <li class="nav-item active">Home</li>
+                <li class="nav-item">Explore</li>
+                <li class="nav-item">Library</li>
+            </ul>
+        </nav>
+        
+        <!-- Main Content Area -->
+        <main id="main-content">
+            <div id="content-area">
+                <p class="placeholder-text">Search for music or podcasts to get started...</p>
+            </div>
+        </main>
+        
+        <!-- Right Panel -->
+        <aside id="right-panel">
+            <div class="panel-header">Related</div>
+            <div id="related-videos">
+                <p class="placeholder-text">Related videos will appear here</p>
+            </div>
+        </aside>
+    </div>
+    
+    <!-- Bottom Player Bar -->
+    <footer id="player-bar">
+        <div class="player-track-info">
+            <img id="player-thumbnail" src="" alt="" class="hidden">
+            <div class="player-track-text">
+                <div id="player-track-title">-</div>
+                <div id="player-artist">-</div>
+            </div>
+        </div>
+        
+        <div class="player-controls">
+            <button id="btn-prev" class="control-btn">⏮</button>
+            <button id="btn-play" class="control-btn">▶</button>
+            <button id="btn-next" class="control-btn">⏭</button>
+            <div class="progress-container">
+                <span id="current-time">0:00</span>
+                <input type="range" id="progress-bar" min="0" max="100" value="0">
+                <span id="total-time">0:00</span>
+            </div>
+        </div>
+        
+        <div class="player-volume">
+            <span>🔊</span>
+            <input type="range" id="volume-slider" min="0" max="100" value="80">
+        </div>
+    </footer>
+    
+    <!-- Hidden audio element -->
+    <audio id="audio-player" preload="metadata"></audio>
+    
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
