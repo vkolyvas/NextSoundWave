@@ -1,4 +1,5 @@
 # NextSoundWave - Self-hosted Music Streaming
+<img width="1887" height="875" alt="Image" src="https://github.com/user-attachments/assets/6ecf1f49-f0d6-415a-8b56-7c437b0b1f10" />
 
 Self-hosted music/podcast streaming via YouTube with ad-free embeds.
 
